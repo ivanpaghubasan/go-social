@@ -18,7 +18,7 @@ type CreatePostPayload struct {
 
 type contextKey string
 
-const postContextKey contextKey = "postCtxKey"
+const postContextKey contextKey = "post"
 
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 	var payload CreatePostPayload
@@ -52,27 +52,9 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
-	idParam := chi.URLParam(r, "postID")
-	id, err := strconv.ParseInt(idParam, 10, 64)
-	if err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
+	post := getPostFormCtx(r)
 
-	ctx := r.Context()
-
-	post, err := app.store.Posts.GetByID(ctx, id)
-	if err != nil {
-		switch {
-		case errors.Is(err, store.ErrNotFound):
-			app.notFoundResponse(w, r, err)
-		default:
-			app.internalServerError(w, r, err)
-		}
-		return
-	}
-
-	comments, err := app.store.Comments.GetByPostID(ctx, id)
+	comments, err := app.store.Comments.GetByPostID(r.Context(), post.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
