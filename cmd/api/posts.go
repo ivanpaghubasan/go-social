@@ -153,6 +153,51 @@ func (app *application) postContextMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+type CreateCommentPayload struct {
+	UserID  string `json:"userId"`
+	Content string `json:"content"`
+}
+
+func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "postID")
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	ctx := r.Context()
+
+	var payload CreateCommentPayload
+	if err = readJSON(w, r, payload); err != nil {
+		app.badRequestError(w, r, err)
+		return
+	}
+
+	userID, err := strconv.ParseInt(payload.UserID, 10, 64)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	comment := &store.Comment{
+		Content: payload.Content,
+		UserID:  userID,
+		PostID:  id,
+	}
+
+	err = app.store.Comments.Create(ctx, comment)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err = app.jsonResponse(w, http.StatusCreated, comment); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
 func getPostFormCtx(r *http.Request) *store.Post {
 	post, _ := r.Context().Value(postContextKey).(*store.Post)
 	return post
