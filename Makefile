@@ -11,7 +11,17 @@ migrate-up:
 
 .PHONY: migrate-down
 migrate-down:
-	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_ADDR) down $(filter-out $@,$(MAKECMDGOALS))
+	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_ADDR) down 1
+
+.PHONY: migrate-reset
+migrate-reset:
+	@echo "Resetting database..."
+	# Drop all tables (postgres version)
+	@psql $(DB_ADDR) -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" || true
+	# Force clean if necessary
+	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_ADDR) drop -f
+	# Reapply all migrations
+	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_ADDR) up
 
 .PHONY: seed
 seed:
