@@ -18,7 +18,7 @@ type CreatePostPayload struct {
 
 type contextKey string
 
-const postContextKey contextKey = "post"
+const postContextKey contextKey = "postCtx"
 
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 	var payload CreatePostPayload
@@ -52,7 +52,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
-	post := getPostFormCtx(r)
+	post := getPostFromCtx(r)
 
 	comments, err := app.store.Comments.GetByPostID(r.Context(), post.ID)
 	if err != nil {
@@ -95,7 +95,7 @@ type UpdatePostPayload struct {
 }
 
 func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
-	post := getPostFormCtx(r)
+	post := getPostFromCtx(r)
 
 	var payload UpdatePostPayload
 	if err := readJSON(w, r, &payload); err != nil {
@@ -198,7 +198,7 @@ func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func getPostFormCtx(r *http.Request) *store.Post {
+func getPostFromCtx(r *http.Request) *store.Post {
 	post, _ := r.Context().Value(postContextKey).(*store.Post)
 	return post
 }
